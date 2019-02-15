@@ -390,6 +390,8 @@ class CompilerArtifactsSection:
         return os.path.join(self.cacheEntryDir(key), CompilerArtifactsSection.OBJECT_FILE)
 
     def hasEntry(self, key):
+        if 'CLCACHE_RECACHE' in os.environ:
+            return False
         return os.path.exists(self.cacheEntryDir(key))
 
     def setEntry(self, key, artifacts):
@@ -414,6 +416,10 @@ class CompilerArtifactsSection:
         if artifacts.stderr != '':
             setCachedCompilerConsoleOutput(os.path.join(tempEntryDir, CompilerArtifactsSection.STDERR_FILE),
                                            artifacts.stderr)
+        if 'CLCACHE_RECACHE' in os.environ:
+            if os.path.exists(cacheEntryDir):
+                rmtree(cacheEntryDir)
+                size = -1
         # Replace the full cache entry atomically
         os.replace(tempEntryDir, cacheEntryDir)
         return size
@@ -1522,7 +1528,8 @@ def addObjectToCache(stats, cache, cachekey, artifacts):
         size = os.path.getsize(artifacts.objectFilePath)
         if artifacts.pchFilePath:
             size += os.path.getsize(artifacts.pchFilePath)
-    stats.registerCacheEntry(size)
+    if size >= 0: # negative size means an existing cache entry was overwritten
+        stats.registerCacheEntry(size)
 
     with cache.configuration as cfg:
         return stats.currentCacheSize() >= cfg.maximumCacheSize()
