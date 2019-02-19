@@ -90,10 +90,11 @@ CLCACHE_NODIRECT::
     key. Use this if you experience problems with direct mode or if you need
     built-in macroses like \__TIME__ to work correctly.
 CLCACHE_BASEDIR::
-    Has effect only when direct mode is on. Set this to path to root directory
-    of your project. This allows clcache to cache relative paths, so if you
-    move your project to different directory, clcache will produce cache hits as
-    before.
+    Set this to path to root directory of your project. In direct mode, this allows
+    clcache to cache relative paths, so if you move your project to different directory,
+    clcache will produce cache hits as before. When direct mode is disabled, clcache will
+    translate any absolute paths in the preprocessor output into relative paths before
+    computing the hash.
 CLCACHE_OBJECT_CACHE_TIMEOUT_MS::
     Overrides the default ObjectCacheLock timeout (Default is 10 * 1000 ms).
     The ObjectCacheLock is used to give exclusive access to the cache, which is
