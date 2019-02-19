@@ -469,6 +469,11 @@ class CompilerArtifactsRepository:
         compilerHash = getCompilerHash(compilerBinary)
         normalizedCmdLine = CompilerArtifactsRepository._normalizedCommandLine(commandLine)
 
+        if "CLCACHE_BASEDIR" in os.environ:
+            baseDir = normalizeBaseDir(os.environ["CLCACHE_BASEDIR"]).replace("\\", "\\\\").encode("UTF-8")
+            newBaseDir = BASEDIR_REPLACEMENT.encode("UTF-8")
+            preprocessedSourceCode = re.sub(re.escape(baseDir), newBaseDir, preprocessedSourceCode, flags=re.IGNORECASE)
+
         h = HashAlgorithm()
         h.update(compilerHash.encode("UTF-8"))
         h.update(' '.join(normalizedCmdLine).encode("UTF-8"))
@@ -495,7 +500,7 @@ class CompilerArtifactsRepository:
         argsToStrip += ("MP",)
 
         return [arg for arg in cmdline
-                if not (arg[0] in "/-" and arg[1:].startswith(argsToStrip))]
+                if arg[0] in "/-" and not arg[1:].startswith(argsToStrip)]
 
 class CacheFileStrategy:
     def __init__(self, cacheDirectory=None):

@@ -1069,12 +1069,14 @@ class TestBasedir(unittest.TestCase):
         os.chdir(self.savedCwd)
         self.tempDir.cleanup()
 
-    def _runCompiler(self, cppFile, extraArgs=None):
+    def _runCompiler(self, cppFile, extraArgs=None, direct=True):
         cmd = CLCACHE_CMD + ["/nologo", "/EHsc", "/c"]
         if extraArgs:
             cmd.extend(extraArgs)
         cmd.append(cppFile)
         env = dict(os.environ, CLCACHE_DIR=self.clcacheDir, CLCACHE_BASEDIR=os.getcwd())
+        if not direct:
+            env["CLCACHE_NODIRECT"] = "1"
         self.assertEqual(subprocess.call(cmd, env=env), 0)
 
     def expectHit(self, runCompiler):
@@ -1139,6 +1141,16 @@ class TestBasedir(unittest.TestCase):
         def runCompiler():
             self._runCompiler("main.cpp", ["/DRESOURCES_DIR={}".format(os.getcwd())])
         self.expectMiss([runCompiler, runCompiler])
+
+    def testBasedirNoDirectAbsolutePath(self):
+        def runCompiler():
+            self._runCompiler(os.path.join(os.getcwd(), "main.cpp"), direct=False)
+        self.expectHit([runCompiler, runCompiler])
+
+    def testBasedirNoDirectFileMacro(self):
+        def runCompiler():
+            self._runCompiler(os.path.join(os.getcwd(), "filemacro.cpp"), direct=False)
+        self.expectHit([runCompiler, runCompiler])
 
     def testBasedirRelativeIncludeArg(self):
         basedir = os.getcwd()
