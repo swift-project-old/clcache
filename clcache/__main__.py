@@ -493,6 +493,13 @@ class CompilerArtifactsRepository:
         h.update(compilerHash.encode("UTF-8"))
         h.update(' '.join(normalizedCmdLine).encode("UTF-8"))
         h.update(preprocessedSourceCode)
+
+        pchFiles = [(arg[3:] for arg in commandLine if arg[:3] in ('-Yu', '/Yu')),
+                    (arg[3:] for arg in commandLine if arg[:3] in ('-Fp', '/Fp'))]
+        for pchFile in pchFiles[0]:
+            for pchFile in pchFiles[1]: break
+            h.update(readPCHHash(pchFile).encode("UTF-8"))
+            break
         return h.hexdigest()
 
     @staticmethod
