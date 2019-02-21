@@ -263,6 +263,28 @@ class TestHits(unittest.TestCase):
                 newHits = stats.numCacheHits()
             self.assertEqual(newHits, oldHits + 1)
 
+    @pytest.mark.skipif("CLCACHE_MEMCACHED" in os.environ,
+                        reason="recache on memcached not implemented")
+    def testRecacheMiss(self):
+        with cd(os.path.join(ASSETS_DIR, "hits-and-misses")):
+            cmd = CLCACHE_CMD + ["/nologo", "/EHsc", "/c", 'hit.cpp']
+            subprocess.check_call(cmd) # Ensure it has been compiled before
+
+            customEnv = dict(os.environ, CLCACHE_RECACHE="1")
+            cache = clcache.Cache()
+            with cache.statistics as stats:
+                oldHits = stats.numCacheHits()
+                oldMiss = stats.numCacheMisses()
+                oldSize = stats.currentCacheSize()
+            subprocess.check_call(cmd, env=customEnv) # This must miss now
+            with cache.statistics as stats:
+                newHits = stats.numCacheHits()
+                newMiss = stats.numCacheMisses()
+                newSize = stats.currentCacheSize()
+            self.assertEqual(newHits, oldHits)
+            self.assertEqual(newMiss, oldMiss + 1)
+            self.assertEqual(newSize, oldSize) # No change in size
+
     def testAlternatingHeadersHit(self):
         with cd(os.path.join(ASSETS_DIR, "hits-and-misses")), tempfile.TemporaryDirectory() as tempDir:
             cache = clcache.Cache(tempDir)
